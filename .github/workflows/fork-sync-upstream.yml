@@ -1,0 +1,53 @@
+# Fork (Iuri): brings the updates of git-moss/DrivenByMoss into the 'iuri' branch.
+#  - 'master' is kept identical to upstream.
+#  - upstream is merged into 'iuri'. Without conflicts it is pushed directly (which triggers a build).
+#  - With conflicts, a pull request 'upstream-sync -> iuri' is opened to be resolved by hand.
+name: Sync with upstream
+
+on:
+  schedule:
+    - cron: '17 9 * * 1'   # Mondays 06:17 Bahia time
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: iuri
+          fetch-depth: 0
+
+      - name: Merge upstream
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add upstream https://github.com/git-moss/DrivenByMoss.git
+          git fetch upstream master
+
+          # Mirror upstream into master
+          git push origin upstream/master:refs/heads/master --force
+
+          if git merge-base --is-ancestor upstream/master HEAD; then
+            echo "Already up to date."
+            exit 0
+          fi
+
+          if git merge --no-edit -m "Merge upstream DrivenByMoss" upstream/master; then
+            git push origin HEAD:iuri
+            echo "Merged and pushed."
+          else
+            git merge --abort
+            git push origin upstream/master:refs/heads/upstream-sync --force
+            gh pr list --head upstream-sync --state open --json number --jq 'length' | grep -q '^0$' && \
+              gh pr create --base iuri --head upstream-sync \
+                --title "Upstream update has conflicts" \
+                --body "The automatic merge of git-moss/DrivenByMoss into 'iuri' has conflicts. Merge this PR locally and resolve them (look for the [fork] markers)."
+            exit 0
+          fi

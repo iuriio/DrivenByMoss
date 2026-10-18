@@ -4,7 +4,8 @@
 # and only the APC40 code changed. The normal path is `mvn clean package` (or the GitHub Action).
 #
 # Usage: fork-tools/build-patch.sh API_JAR BASE_BWEXTENSION [OUT_FILE]
-#   API_JAR          - Bitwig extension API classes, e.g. extracted from bitwig.jar
+#   API_JAR          - Bitwig extension API classes; the com/bitwig/extension/** entries extracted
+#                      from "/Applications/Bitwig Studio.app/Contents/Java/bitwig.jar" work here
 #   BASE_BWEXTENSION - the official DrivenByMoss.bwextension to patch
 set -euo pipefail
 

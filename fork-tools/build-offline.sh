@@ -5,8 +5,8 @@
 # This script exists for environments where Maven Central is unreachable.
 #
 # Needs two jars:
-#   API_JAR  - Bitwig extension API classes (com/bitwig/extension/**), e.g. extracted from
-#              "/Applications/Bitwig Studio.app/Contents/Java/bitwig.jar"
+#   API_JAR  - the real com.bitwig:extension-api jar (version as in pom.xml). The classes
+#              inside bitwig.jar are NOT enough here: they are obfuscated without generics.
 #   DEPS_JAR - third-party libraries (jna, jackson, hid, jamepad, nativefiledialogs...),
 #              e.g. everything except de/mossgrabers/{bitwig,controller,framework} taken
 #              from an official DrivenByMoss.bwextension

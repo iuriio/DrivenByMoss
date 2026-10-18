@@ -1,0 +1,38 @@
+# Fork (Iuri): builds DrivenByMoss.bwextension for every push to the 'iuri' branch.
+# Download it from the run's artifacts (or from the release, when a tag is pushed).
+name: Build extension
+
+on:
+  push:
+    branches: [iuri]
+    tags: ['iuri-*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Build
+        run: mvn -B -q clean package -Dbitwig.extension.directory=target
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DrivenByMoss-iuri
+          path: target/DrivenByMoss.bwextension
+
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/iuri-')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" target/DrivenByMoss.bwextension --title "$GITHUB_REF_NAME" --notes "Build of $GITHUB_SHA"
