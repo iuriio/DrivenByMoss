@@ -21,6 +21,13 @@ Fork of [git-moss/DrivenByMoss](https://github.com/git-moss/DrivenByMoss) with c
   state.
 - **Track Select LEDs:** an open group is lit like the selected track. A closed group looks like
   a normal track. (The Track Select LEDs are single color, so there is no dimming or fading.)
+- **MIDI capture:** double tap an empty slot to turn the notes you just played on that track into
+  a new clip, which starts playing right away. The length is the *New Clip Length* (Shift + Track
+  Select). With the transport running, the clip ends at the bar line closest to the double tap;
+  with the transport stopped, it starts with the first captured note. Everything that sounded on
+  the track counts (keyboard and playing clips), but only while the track was on the APC's page.
+  On empty slots of tracks with notes in the last minute the single tap waits 300 ms for a
+  possible second tap.
 - A notification on startup shows the running build (commit and date).
 
 Every change in the code is marked with `[fork]`. This makes resolving conflicts easier.

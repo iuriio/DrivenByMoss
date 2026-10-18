@@ -5,6 +5,7 @@
 package de.mossgrabers.controller.akai.apc.view;
 
 import de.mossgrabers.controller.akai.apc.APCConfiguration;
+import de.mossgrabers.controller.akai.apc.ForkMidiCapture;
 import de.mossgrabers.controller.akai.apc.controller.APCColorManager;
 import de.mossgrabers.controller.akai.apc.controller.APCControlSurface;
 import de.mossgrabers.framework.controller.ButtonID;
@@ -17,6 +18,7 @@ import de.mossgrabers.framework.daw.data.ITrack;
 import de.mossgrabers.framework.daw.data.bank.ISceneBank;
 import de.mossgrabers.framework.featuregroup.AbstractFeatureGroup;
 import de.mossgrabers.framework.utils.ButtonEvent;
+import de.mossgrabers.framework.utils.Pair;
 import de.mossgrabers.framework.view.AbstractSessionView;
 
 
@@ -27,6 +29,14 @@ import de.mossgrabers.framework.view.AbstractSessionView;
  */
 public class SessionView extends AbstractSessionView<APCControlSurface, APCConfiguration>
 {
+    // [fork] Double tap on an empty slot captures the recently played notes
+    private static final int  DOUBLE_TAP_MS     = 300;
+    private ForkMidiCapture   midiCapture;
+    private final boolean []  forkSwallowRelease = new boolean [128];
+    private int               forkPendingNote    = -1;
+    private int               forkPendingId;
+
+
     /**
      * Constructor.
      *
@@ -104,7 +114,92 @@ public class SessionView extends AbstractSessionView<APCControlSurface, APCConfi
             return;
         }
 
+        // [fork] MIDI capture
+        if (this.midiCapture != null && this.handleCaptureTap (note, velocity))
+            return;
+
         super.onGridNote (note, velocity);
+    }
+
+
+    /**
+     * [fork] Set the MIDI capture to use for double taps on empty slots.
+     *
+     * @param midiCapture The MIDI capture
+     */
+    public void setMidiCapture (final ForkMidiCapture midiCapture)
+    {
+        this.midiCapture = midiCapture;
+    }
+
+
+    /**
+     * [fork] A double tap on an empty slot of a track with recently played notes captures them into
+     * a new clip. On such slots the single tap is delayed until it is clear that no second tap
+     * follows. All other pads work as before.
+     *
+     * @param note The note of the pad
+     * @param velocity The velocity, 0 on release
+     * @return True if the event was handled
+     */
+    private boolean handleCaptureTap (final int note, final int velocity)
+    {
+        if (note < 0 || note >= this.forkSwallowRelease.length)
+            return false;
+
+        if (velocity == 0)
+        {
+            final boolean swallow = this.forkSwallowRelease[note];
+            this.forkSwallowRelease[note] = false;
+            return swallow;
+        }
+
+        if (this.surface.isShiftPressed ())
+            return false;
+        final Pair<Integer, Integer> padPos = this.getPad (note);
+        if (padPos == null)
+            return false;
+        final ITrack track = this.model.getCurrentTrackBank ().getItem (padPos.getKey ().intValue ());
+        final ISlot slot = track.getSlotBank ().getItem (padPos.getValue ().intValue ());
+        if (!slot.doesExist () || slot.hasContent () || !this.midiCapture.hasRecentNotes (track))
+        {
+            this.executePendingTap ();
+            return false;
+        }
+
+        this.forkSwallowRelease[note] = true;
+
+        // Second tap
+        if (this.forkPendingNote == note)
+        {
+            this.forkPendingNote = -1;
+            this.midiCapture.capture (track, slot);
+            return true;
+        }
+
+        // First tap, execute it if no second tap follows
+        this.executePendingTap ();
+        this.forkPendingNote = note;
+        final int id = ++this.forkPendingId;
+        this.surface.scheduleTask ( () -> {
+            if (this.forkPendingId == id)
+                this.executePendingTap ();
+        }, DOUBLE_TAP_MS);
+        return true;
+    }
+
+
+    /**
+     * [fork] Execute the delayed single tap, if any.
+     */
+    private void executePendingTap ()
+    {
+        final int note = this.forkPendingNote;
+        if (note < 0)
+            return;
+        this.forkPendingNote = -1;
+        super.onGridNote (note, 127);
+        super.onGridNote (note, 0);
     }
 
 
