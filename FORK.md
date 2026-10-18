@@ -46,7 +46,7 @@ git push origin iuri
 
 - **GitHub Actions** (*Build extension*): a cada push em `iuri`. Baixe `DrivenByMoss.bwextension`
   nos artifacts do run. Uma tag `iuri-<versão>` gera também uma Release.
-- **Local:** `mvn clean package -Dbitwig.extension.directory=target` (Java 21 + Maven).
+- **Local:** `mvn clean install -Dbitwig.extension.directory=target` (Java 21 + Maven). Tem que ser `install`: a cópia para `DrivenByMoss.bwextension` roda nessa fase do pom.
 - **Sem Maven Central:** `fork-tools/build-patch.sh` recompila só os pacotes da APC e injeta num
   `.bwextension` oficial da **mesma versão**.
 

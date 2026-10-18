@@ -24,12 +24,13 @@ jobs:
           cache: maven
 
       - name: Build
-        run: mvn -B -q clean package -Dbitwig.extension.directory=target
+        run: mvn -B -q clean install -Dbitwig.extension.directory=target
 
       - uses: actions/upload-artifact@v4
         with:
           name: DrivenByMoss-iuri
           path: target/DrivenByMoss.bwextension
+          if-no-files-found: error
 
       - name: Release
         if: startsWith(github.ref, 'refs/tags/iuri-')
