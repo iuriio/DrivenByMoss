@@ -30,7 +30,6 @@ import de.mossgrabers.controller.akai.apc.mode.SendMode;
 import de.mossgrabers.controller.akai.apc.mode.UserMode;
 import de.mossgrabers.controller.akai.apc.view.SessionView;
 import de.mossgrabers.controller.akai.apc.view.ShiftView;
-import de.mossgrabers.bitwig.framework.daw.ForkClipWriter;
 import de.mossgrabers.bitwig.framework.daw.ForkHostHelper;
 import de.mossgrabers.bitwig.framework.daw.UserControlsFactory;
 import de.mossgrabers.framework.command.continuous.KnobRowModeCommand;
@@ -202,10 +201,7 @@ public class APCControllerSetup extends AbstractControllerSetup<APCControlSurfac
         final APCControlSurface surface = this.getSurface ();
         final ViewManager viewManager = surface.getViewManager ();
         // [fork] Session only: the Play, Sequencer, Drum and Raindrops views are not registered
-        final SessionView sessionView = new SessionView (surface, this.model);
-        // [fork] MIDI capture with a double tap on an empty slot
-        sessionView.setMidiCapture (new ForkMidiCapture (this.model, surface, new ForkClipWriter (this.host)));
-        viewManager.register (Views.SESSION, sessionView);
+        viewManager.register (Views.SESSION, new SessionView (surface, this.model));
         viewManager.register (Views.SHIFT, new ShiftView (surface, this.model));
         viewManager.register (Views.TEMPO, new TempoView<> (surface, this.model, this.isMkII ? APCColorManager.APC_MKII_COLOR_BLUE : APCColorManager.APC_COLOR_GREEN, this.isMkII ? APCColorManager.APC_MKII_COLOR_WHITE : APCColorManager.APC_COLOR_YELLOW, APCColorManager.APC_COLOR_BLACK));
     }
