@@ -3,8 +3,6 @@
 
 package de.mossgrabers.bitwig.framework.daw;
 
-import de.mossgrabers.framework.daw.IHost;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -20,17 +18,6 @@ public final class ForkHostHelper
     private ForkHostHelper ()
     {
         // Intentionally empty
-    }
-
-
-    /**
-     * Ask Bitwig to call flush() soon, e.g. to update blinking LEDs.
-     *
-     * @param host The host, must be the Bitwig host implementation
-     */
-    public static void requestFlush (final IHost host)
-    {
-        ((HostImpl) host).getControllerHost ().requestFlush ();
     }
 
 
