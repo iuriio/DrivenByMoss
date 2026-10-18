@@ -57,4 +57,6 @@ git push origin iuri
 - **Without Maven Central:** `fork-tools/build-patch.sh` recompiles only the APC packages and
   patches them into an official `.bwextension` of the **same version**.
 
-Installation: copy `DrivenByMoss.bwextension` to `~/Documents/Bitwig Studio/Extensions/`.
+Installation: `fork-tools/install-latest.sh` downloads the latest build and installs it. Bitwig
+reloads the extension without a restart because the file is replaced with a rename; copying
+over the file in place does not trigger the reload.
