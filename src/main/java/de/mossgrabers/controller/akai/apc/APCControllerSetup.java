@@ -704,25 +704,24 @@ public class APCControllerSetup extends AbstractControllerSetup<APCControlSurfac
 
 
     /**
-     * [fork] The LED state of the track select button: the selected track is on, a closed group
-     * blinks slowly, an open group blinks fast, all other tracks are off.
+     * [fork] The LED state of the track select button: a closed group blinks slowly, an open group
+     * blinks fast (also when selected), the selected track is on, all other tracks are off.
      *
      * @param index The index of the track in the page
      * @return 1 for on, 0 for off
      */
     private int getTrackSelectState (final int index)
     {
-        if (this.getButtonState (index, APCControlSurface.APC_BUTTON_TRACK_SELECTION))
-            return 1;
+        final int state = this.getButtonState (index, APCControlSurface.APC_BUTTON_TRACK_SELECTION) ? 1 : 0;
 
         // Keep the upstream behaviour while combined with Shift, Sends or User
         final APCControlSurface surface = this.getSurface ();
         if (surface.isShiftPressed () || surface.isPressed (ButtonID.SEND1) || surface.isMkII () && surface.isPressed (ButtonID.SEND2))
-            return 0;
+            return state;
 
         final ITrack track = this.model.getCurrentTrackBank ().getItem (index);
         if (!track.doesExist () || !track.isGroup ())
-            return 0;
+            return state;
         final boolean on = track.isGroupExpanded () ? this.blinkTick % 2 == 0 : this.blinkTick / 3 % 2 == 0;
         return on ? 1 : 0;
     }

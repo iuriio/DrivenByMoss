@@ -103,13 +103,13 @@ public class SelectTrackSendOrClipLengthCommand extends AbstractTriggerCommand<A
                 if (cursorTrack.isGroup ())
                 {
                     cursorTrack.setGroupExpanded (false);
-                    this.surface.getDisplay ().notify ("Pasta fechada: " + cursorTrack.getName ());
+                    this.surface.getDisplay ().notify ("Group closed: " + cursorTrack.getName ());
                 }
             }, 100);
             return;
         }
         if (track.doesExist () && track.isSelected () && track.isGroup ())
-            this.surface.getDisplay ().notify ((track.isGroupExpanded () ? "Pasta fechada: " : "Pasta aberta: ") + track.getName ());
+            this.surface.getDisplay ().notify ((track.isGroupExpanded () ? "Group closed: " : "Group opened: ") + track.getName ());
         track.selectOrExpandGroup ();
     }
 

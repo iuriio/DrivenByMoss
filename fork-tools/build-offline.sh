@@ -1,7 +1,7 @@
 #!/bin/bash
 # Fork tool (Iuri): builds DrivenByMoss.bwextension with plain javac, without Maven.
 #
-# Normal path is still `mvn clean package -Dbitwig.extension.directory=target`.
+# Normal path is still `mvn clean install -Dbitwig.extension.directory=target`.
 # This script exists for environments where Maven Central is unreachable.
 #
 # Needs two jars:

@@ -1,7 +1,7 @@
 #!/bin/bash
 # Fork tool (Iuri): rebuilds only the fork-modified packages and patches them into an official
 # DrivenByMoss.bwextension of the SAME upstream version. Use it when Maven Central is unreachable
-# and only the APC40 code changed. The normal path is `mvn clean package` (or the GitHub Action).
+# and only the APC40 code changed. The normal path is `mvn clean install` (or the GitHub Action).
 #
 # Usage: fork-tools/build-patch.sh API_JAR BASE_BWEXTENSION [OUT_FILE]
 #   API_JAR          - Bitwig extension API classes; the com/bitwig/extension/** entries extracted

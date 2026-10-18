@@ -1,54 +1,60 @@
-# DrivenByMoss — fork do Iuri
+# DrivenByMoss — Iuri's fork
 
-Fork de [git-moss/DrivenByMoss](https://github.com/git-moss/DrivenByMoss) com mudanças só na
-**Akai APC40 / APC40 mkII**. Todo o resto é idêntico ao original.
+Fork of [git-moss/DrivenByMoss](https://github.com/git-moss/DrivenByMoss) with changes only to the
+**Akai APC40 / APC40 mkII**. Everything else is identical to the original.
 
-## O que muda na APC40
+## What changes on the APC40
 
-- **Só Session View.** Os modos Play, Drum, Sequencer e Raindrops não existem. A APC sempre abre
-  em Session.
-- **Shift é só modificador.** Segurando o Shift você usa as funções nativas (solo/mute, tamanho
-  do clipe etc.). Soltar não abre mais a tela de seleção de modos.
-- **Opção "Device knobs"** (Settings → Controllers → card da APC → *Device Control*):
-  - *Fixed (map with Learn)* (padrão): os 8 knobs de device são controles fixos do Bitwig. Para
-    mapear: botão direito num parâmetro → *Learn Controller Assignment* → gire o knob. Fica
-    salvo no projeto e aparece no painel *Mappings*.
-  - *Follow selected device*: comportamento original (seguem os remote controls do device
-    selecionado).
-- As configurações de escala, note repeat, play e drum sequencer saíram da tela da APC.
+- **Session View only.** The Play, Drum, Sequencer and Raindrops views do not exist. The APC
+  always starts in Session.
+- **Shift is a plain modifier.** While holding Shift you get the native functions (solo/mute, clip
+  length etc.). Releasing it no longer opens the mode selection view.
+- **"Device knobs" option** (Settings → Controllers → APC card → *Device Control*):
+  - *Fixed (map with Learn)* (default): the 8 device knobs are fixed Bitwig controls. To map
+    them: right-click a parameter → *Learn Controller Assignment* → turn the knob. The mapping
+    is stored in the project and shows up in the *Mappings* panel.
+  - *Follow selected device*: original behaviour (the knobs follow the remote controls of the
+    selected device).
+- The scale, note repeat, play and drum sequencer settings were removed from the APC settings.
+- **Groups:** Track Select on the selected group opens/closes it (upstream). Track Select on the
+  selected track inside a group closes the group and selects it. A notification shows the new
+  state.
+- **Track Select LEDs:** closed group blinks slowly, open group blinks fast (also when selected),
+  selected track is on.
 
-Toda mudança no código está marcada com `[fork]`. Isso facilita resolver conflitos.
+Every change in the code is marked with `[fork]`. This makes resolving conflicts easier.
 
 ## Branches
 
-| Branch          | O que é                                                              |
-|-----------------|----------------------------------------------------------------------|
-| `master`        | Espelho exato do upstream (atualizado pela Action de sync)          |
-| `iuri`          | `master` + as mudanças do fork. **É daqui que sai o build.**        |
-| `upstream-sync` | Só aparece quando o merge automático dá conflito (vem com um PR)    |
+| Branch          | What it is                                                         |
+|-----------------|--------------------------------------------------------------------|
+| `master`        | Exact mirror of upstream (updated by the sync Action)              |
+| `iuri`          | `master` + the fork changes. **The build comes from here.**        |
+| `upstream-sync` | Only exists when the automatic merge has conflicts (comes with a PR) |
 
-## Atualizações do Moss
+## Updates from Moss
 
-A Action **Sync with upstream** roda toda segunda de manhã (ou manualmente em *Actions*):
+The **Sync with upstream** Action runs every Monday morning (or manually in *Actions*):
 
-1. atualiza `master` com o upstream;
-2. faz merge do upstream em `iuri`. Sem conflito, faz push direto e dispara o build;
-3. com conflito, abre um PR `upstream-sync → iuri`. Resolva localmente:
+1. updates `master` with upstream;
+2. merges upstream into `iuri`. Without conflicts it pushes directly and starts the build;
+3. with conflicts it opens a PR `upstream-sync → iuri`. Resolve it locally:
 
 ```bash
 git checkout iuri
 git fetch origin && git merge origin/upstream-sync
-# resolver conflitos (procure por [fork]), testar, depois:
+# resolve the conflicts (look for [fork]), test, then:
 git push origin iuri
 ```
 
 ## Build
 
-- **GitHub Actions** (*Build extension*): a cada push em `iuri`. Baixe `DrivenByMoss.bwextension`
-  nos artifacts do run. Uma tag `iuri-<versão>` gera também uma Release.
-- **Local:** `mvn clean install -Dbitwig.extension.directory=target` (Java 21 + Maven). Tem que ser `install`: a cópia para `DrivenByMoss.bwextension` roda nessa fase do pom.
-- **Sem Maven Central:** `fork-tools/build-patch.sh` recompila só os pacotes da APC e injeta num
-  `.bwextension` oficial da **mesma versão**.
+- **GitHub Actions** (*Build extension*): on every push to `iuri`. Download
+  `DrivenByMoss.bwextension` from the run's artifacts. A tag `iuri-<version>` also creates a
+  Release.
+- **Local:** `mvn clean install -Dbitwig.extension.directory=target` (Java 21 + Maven). It has to
+  be `install`: the pom copies the jar to `DrivenByMoss.bwextension` in that phase.
+- **Without Maven Central:** `fork-tools/build-patch.sh` recompiles only the APC packages and
+  patches them into an official `.bwextension` of the **same version**.
 
-Instalação: copie `DrivenByMoss.bwextension` para `~/Documents/Bitwig Studio/Extensions/` e
-reinicie o Bitwig.
+Installation: copy `DrivenByMoss.bwextension` to `~/Documents/Bitwig Studio/Extensions/`.
