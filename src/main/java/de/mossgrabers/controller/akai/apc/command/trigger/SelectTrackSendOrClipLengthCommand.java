@@ -11,6 +11,7 @@ import de.mossgrabers.framework.command.trigger.mode.ModeMultiSelectCommand;
 import de.mossgrabers.framework.configuration.AbstractConfiguration;
 import de.mossgrabers.framework.controller.ButtonID;
 import de.mossgrabers.framework.daw.IModel;
+import de.mossgrabers.framework.daw.data.ICursorTrack;
 import de.mossgrabers.framework.daw.data.ITrack;
 import de.mossgrabers.framework.daw.data.bank.ITrackBank;
 import de.mossgrabers.framework.featuregroup.ModeManager;
@@ -89,7 +90,22 @@ public class SelectTrackSendOrClipLengthCommand extends AbstractTriggerCommand<A
             return;
         }
 
-        this.model.getCurrentTrackBank ().getItem (this.index).selectOrExpandGroup ();
+        // [fork] Folders: pressing the selected group track opens/closes it (upstream behaviour),
+        // pressing the selected track inside an open group closes that group again and selects it
+        final ITrackBank currentTrackBank = this.model.getCurrentTrackBank ();
+        final ITrack track = currentTrackBank.getItem (this.index);
+        if (track.doesExist () && track.isSelected () && !track.isGroup () && track.hasParent ())
+        {
+            currentTrackBank.selectParent ();
+            // The cursor track follows the selection asynchronously
+            this.surface.scheduleTask (() -> {
+                final ICursorTrack cursorTrack = this.model.getCursorTrack ();
+                if (cursorTrack.isGroup ())
+                    cursorTrack.setGroupExpanded (false);
+            }, 100);
+            return;
+        }
+        track.selectOrExpandGroup ();
     }
 
 
