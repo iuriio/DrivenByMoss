@@ -19,9 +19,9 @@ Fork of [git-moss/DrivenByMoss](https://github.com/git-moss/DrivenByMoss) with c
 - **Groups:** Track Select on the selected group opens/closes it (upstream). Track Select on the
   selected track inside a group closes the group and selects it. A notification shows the new
   state.
-- **Open groups on the pads (mkII):** the empty slots of an open group pulse softly (1/4) and the
-  empty slots of the tracks inside of it pulse with 1/2, both in the dimmed track color. Closed
-  groups look like normal tracks. A notification on startup shows the running build.
+- **Track Select LEDs:** an open group is lit like the selected track. A closed group looks like
+  a normal track. (The Track Select LEDs are single color, so there is no dimming or fading.)
+- A notification on startup shows the running build (commit and date).
 
 Every change in the code is marked with `[fork]`. This makes resolving conflicts easier.
 

@@ -7,7 +7,6 @@ package de.mossgrabers.controller.akai.apc.view;
 import de.mossgrabers.controller.akai.apc.APCConfiguration;
 import de.mossgrabers.controller.akai.apc.controller.APCColorManager;
 import de.mossgrabers.controller.akai.apc.controller.APCControlSurface;
-import de.mossgrabers.controller.akai.apc.controller.APCPadGrid;
 import de.mossgrabers.framework.controller.ButtonID;
 import de.mossgrabers.framework.controller.grid.LightInfo;
 import de.mossgrabers.framework.daw.DAWColor;
@@ -126,45 +125,6 @@ public class SessionView extends AbstractSessionView<APCControlSurface, APCConfi
     {
         // Sadly, no additional button available
         return false;
-    }
-
-
-    /**
-     * [fork] Empty slots of an open group pulse softly with 1/4, the ones of the tracks inside of a
-     * group with 1/2. The dimmed color of the track is used.
-     */
-    @Override
-    protected void drawPad (final ISlot slot, final int x, final int y, final boolean isArmed)
-    {
-        if (this.surface.isMkII () && slot.doesExist () && this.getPadColor (slot, isArmed) == this.clipColorHasNoContent)
-        {
-            final ITrack track = this.model.getCurrentTrackBank ().getItem (this.surface.getConfiguration ().isFlipSession () ? y : x);
-            final boolean isOpenGroup = track.isGroup () && track.isGroupExpanded ();
-            if (isOpenGroup || track.hasParent ())
-            {
-                final String colorID = DAWColor.getColorID (track.getColor ());
-                final int color = colorID == null ? APCColorManager.APC_MKII_COLOR_GREY_LO : dimColor (this.model.getColorManager ().getColorIndex (colorID));
-                ((APCPadGrid) this.surface.getPadGrid ()).lightPulse (x, y + this.getYOffset (), color, isOpenGroup);
-                return;
-            }
-        }
-
-        super.drawPad (slot, x, y, isArmed);
-    }
-
-
-    /**
-     * [fork] Get the low brightness variant of a color. The colors 4-63 of the palette are in
-     * groups of 4 (light, high, medium, low).
-     *
-     * @param color The color index
-     * @return The dimmed color index
-     */
-    private static int dimColor (final int color)
-    {
-        if (color < 4 || color > 63)
-            return APCColorManager.APC_MKII_COLOR_GREY_LO;
-        return (color & ~3) + 3;
     }
 
 
