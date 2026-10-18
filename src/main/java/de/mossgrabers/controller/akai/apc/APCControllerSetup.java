@@ -689,6 +689,11 @@ public class APCControllerSetup extends AbstractControllerSetup<APCControlSurfac
 
         // [fork] Timer for the blinking group tracks
         this.blinkTimer ();
+
+        // [fork] Show which build is running
+        final String build = "DrivenByMoss fork: " + ForkHostHelper.getBuildName ();
+        this.host.println (build);
+        surface.getDisplay ().notify (build);
     }
 
 

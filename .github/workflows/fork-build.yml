@@ -23,6 +23,9 @@ jobs:
           java-version: '21'
           cache: maven
 
+      - name: Stamp build
+        run: echo "$(git rev-parse --short HEAD) $(TZ=America/Bahia date '+%Y-%m-%d %H:%M')" > src/main/resources/fork-build.txt
+
       - name: Build
         run: mvn -B -q clean install -Dbitwig.extension.directory=target
 
