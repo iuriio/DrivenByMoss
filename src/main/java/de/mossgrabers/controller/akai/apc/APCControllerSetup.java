@@ -30,6 +30,7 @@ import de.mossgrabers.controller.akai.apc.mode.SendMode;
 import de.mossgrabers.controller.akai.apc.mode.UserMode;
 import de.mossgrabers.controller.akai.apc.view.SessionView;
 import de.mossgrabers.controller.akai.apc.view.ShiftView;
+import de.mossgrabers.bitwig.framework.daw.ForkHostHelper;
 import de.mossgrabers.bitwig.framework.daw.UserControlsFactory;
 import de.mossgrabers.framework.command.continuous.KnobRowModeCommand;
 import de.mossgrabers.framework.command.core.NopCommand;
@@ -101,6 +102,9 @@ public class APCControllerSetup extends AbstractControllerSetup<APCControlSurfac
     private IParameter []      fixedDeviceKnobs;
     private ParameterMode<APCControlSurface, APCConfiguration> deviceKnobMode;
     private Boolean            deviceKnobsFixed;
+    // [fork] Blinking of group tracks
+    private static final long  BLINK_TICK_MS    = 150;
+    private int                blinkTick;
     private APCTapTempoCommand tapTempoCommand;
 
 
@@ -246,7 +250,7 @@ public class APCControllerSetup extends AbstractControllerSetup<APCControlSurfac
 
             final CrossfadeModeCommand<APCControlSurface, APCConfiguration> crossfadeModeCommand = new CrossfadeModeCommand<> (i, this.model, surface);
 
-            this.addButton (ButtonID.get (ButtonID.ROW1_1, i), "Select " + (i + 1), new SelectTrackSendOrClipLengthCommand (i, this.model, surface), i, APCControlSurface.APC_BUTTON_TRACK_SELECTION, () -> this.getButtonState (index, APCControlSurface.APC_BUTTON_TRACK_SELECTION) ? 1 : 0, ColorManager.BUTTON_STATE_OFF, ColorManager.BUTTON_STATE_ON);
+            this.addButton (ButtonID.get (ButtonID.ROW1_1, i), "Select " + (i + 1), new SelectTrackSendOrClipLengthCommand (i, this.model, surface), i, APCControlSurface.APC_BUTTON_TRACK_SELECTION, () -> this.getTrackSelectState (index), ColorManager.BUTTON_STATE_OFF, ColorManager.BUTTON_STATE_ON);
             this.addButton (ButtonID.get (ButtonID.ROW2_1, i), "Solo " + (i + 1), new SoloCommand<> (i, this.model, surface), i, APCControlSurface.APC_BUTTON_SOLO, () -> this.getButtonState (index, APCControlSurface.APC_BUTTON_SOLO) ? 1 : 0, ColorManager.BUTTON_STATE_OFF, ColorManager.BUTTON_STATE_ON);
             this.addButton (ButtonID.get (ButtonID.ROW3_1, i), (this.isMkII ? "Mute " : "Activator ") + (i + 1), new MuteCommand<> (i, this.model, surface), i, APCControlSurface.APC_BUTTON_ACTIVATOR, () -> this.getButtonState (index, APCControlSurface.APC_BUTTON_ACTIVATOR) ? 1 : 0, ColorManager.BUTTON_STATE_OFF, ColorManager.BUTTON_STATE_ON);
             this.addButton (ButtonID.get (ButtonID.ROW4_1, i), "Arm " + (i + 1), new RecArmCommand<> (i, this.model, surface)
@@ -682,6 +686,45 @@ public class APCControllerSetup extends AbstractControllerSetup<APCControlSurfac
         surface.getModeManager ().setActive (Modes.PAN);
         // [fork] Session only
         surface.getViewManager ().setActive (Views.SESSION);
+
+        // [fork] Timer for the blinking group tracks
+        this.blinkTimer ();
+    }
+
+
+    /**
+     * [fork] Toggles the blink phases and requests a refresh of the LEDs.
+     */
+    private void blinkTimer ()
+    {
+        this.blinkTick++;
+        ForkHostHelper.requestFlush (this.host);
+        this.host.scheduleTask (this::blinkTimer, BLINK_TICK_MS);
+    }
+
+
+    /**
+     * [fork] The LED state of the track select button: the selected track is on, a closed group
+     * blinks slowly, an open group blinks fast, all other tracks are off.
+     *
+     * @param index The index of the track in the page
+     * @return 1 for on, 0 for off
+     */
+    private int getTrackSelectState (final int index)
+    {
+        if (this.getButtonState (index, APCControlSurface.APC_BUTTON_TRACK_SELECTION))
+            return 1;
+
+        // Keep the upstream behaviour while combined with Shift, Sends or User
+        final APCControlSurface surface = this.getSurface ();
+        if (surface.isShiftPressed () || surface.isPressed (ButtonID.SEND1) || surface.isMkII () && surface.isPressed (ButtonID.SEND2))
+            return 0;
+
+        final ITrack track = this.model.getCurrentTrackBank ().getItem (index);
+        if (!track.doesExist () || !track.isGroup ())
+            return 0;
+        final boolean on = track.isGroupExpanded () ? this.blinkTick % 2 == 0 : this.blinkTick / 3 % 2 == 0;
+        return on ? 1 : 0;
     }
 
 

@@ -22,7 +22,7 @@ mkdir -p "$WORK/classes" "$WORK/jar" "$(dirname "$OUT")"
 {
     find "$SRC/de/mossgrabers/controller/akai/apc" -name '*.java'
     find "$SRC/de/mossgrabers/bitwig/controller/akai/apc" -name '*.java'
-    echo "$SRC/de/mossgrabers/bitwig/framework/daw/UserControlsFactory.java"
+    grep -rl "^// Fork addition" "$SRC" || true
 } > "$WORK/sources.txt"
 
 javac --release 21 -encoding UTF-8 -nowarn -proc:none -implicit:none \

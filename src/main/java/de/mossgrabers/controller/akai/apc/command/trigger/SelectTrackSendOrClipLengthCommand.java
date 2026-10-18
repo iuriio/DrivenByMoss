@@ -101,10 +101,15 @@ public class SelectTrackSendOrClipLengthCommand extends AbstractTriggerCommand<A
             this.surface.scheduleTask (() -> {
                 final ICursorTrack cursorTrack = this.model.getCursorTrack ();
                 if (cursorTrack.isGroup ())
+                {
                     cursorTrack.setGroupExpanded (false);
+                    this.surface.getDisplay ().notify ("Pasta fechada: " + cursorTrack.getName ());
+                }
             }, 100);
             return;
         }
+        if (track.doesExist () && track.isSelected () && track.isGroup ())
+            this.surface.getDisplay ().notify ((track.isGroupExpanded () ? "Pasta fechada: " : "Pasta aberta: ") + track.getName ());
         track.selectOrExpandGroup ();
     }
 
