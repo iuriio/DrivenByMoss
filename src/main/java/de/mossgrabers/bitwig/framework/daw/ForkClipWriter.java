@@ -4,6 +4,7 @@
 package de.mossgrabers.bitwig.framework.daw;
 
 import com.bitwig.extension.controller.api.Clip;
+import com.bitwig.extension.controller.api.CursorTrack;
 
 import de.mossgrabers.framework.daw.IHost;
 
@@ -23,6 +24,7 @@ public class ForkClipWriter
     /** The number of steps of the cursor clip grid (32 beats). */
     private static final int   PAGE_STEPS  = 1024;
 
+    private final CursorTrack  cursorTrack;
     private final Clip         clip;
     private int                scrollStep;
 
@@ -34,9 +36,11 @@ public class ForkClipWriter
      */
     public ForkClipWriter (final IHost host)
     {
-        this.clip = ((HostImpl) host).getControllerHost ().createLauncherCursorClip (PAGE_STEPS, 128);
+        // The cursor clip of a cursor track follows the slot selection made via the API
+        this.cursorTrack = ((HostImpl) host).getControllerHost ().createCursorTrack ("ForkCaptureCursorTrack", "Fork capture", 0, 0, true);
+        this.cursorTrack.position ().markInterested ();
+        this.clip = this.cursorTrack.createLauncherCursorClip (PAGE_STEPS, 128);
         this.clip.exists ().markInterested ();
-        this.clip.getTrack ().position ().markInterested ();
         this.clip.clipLauncherSlot ().sceneIndex ().markInterested ();
         this.clip.setStepSize (STEP_LENGTH);
         this.clip.scrollToKey (0);
@@ -53,7 +57,18 @@ public class ForkClipWriter
      */
     public boolean isClip (final int trackPosition, final int sceneIndex)
     {
-        return this.clip.exists ().get () && this.clip.getTrack ().position ().get () == trackPosition && this.clip.clipLauncherSlot ().sceneIndex ().get () == sceneIndex;
+        return this.clip.exists ().get () && this.cursorTrack.position ().get () == trackPosition && this.clip.clipLauncherSlot ().sceneIndex ().get () == sceneIndex;
+    }
+
+
+    /**
+     * Describe where the cursor clip points to, for error messages.
+     *
+     * @return The description
+     */
+    public String describe ()
+    {
+        return (this.clip.exists ().get () ? "clip" : "no clip") + " at track " + this.cursorTrack.position ().get () + " scene " + this.clip.clipLauncherSlot ().sceneIndex ().get ();
     }
 
 

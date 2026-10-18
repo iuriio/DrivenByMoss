@@ -176,6 +176,7 @@ public class ForkMidiCapture
         }
 
         track.createClip (slot.getIndex (), length);
+        track.select ();
         slot.select ();
         this.writeWhenReady (trackPosition, slot, toWrite, 0);
     }
@@ -196,7 +197,7 @@ public class ForkMidiCapture
             if (attempt < WRITE_ATTEMPTS)
                 this.surface.scheduleTask ( () -> this.writeWhenReady (trackPosition, slot, toWrite, attempt + 1), WRITE_RETRY_MS);
             else
-                this.surface.getDisplay ().notify ("Capture failed: the new clip could not be selected");
+                this.surface.getDisplay ().notify ("Capture failed: expected track " + trackPosition + " scene " + slot.getPosition () + ", found " + this.writer.describe ());
             return;
         }
 
