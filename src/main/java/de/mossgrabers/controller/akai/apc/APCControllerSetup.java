@@ -28,13 +28,11 @@ import de.mossgrabers.controller.akai.apc.mode.NoteMode;
 import de.mossgrabers.controller.akai.apc.mode.PanMode;
 import de.mossgrabers.controller.akai.apc.mode.SendMode;
 import de.mossgrabers.controller.akai.apc.mode.UserMode;
-import de.mossgrabers.controller.akai.apc.view.DrumView;
-import de.mossgrabers.controller.akai.apc.view.PlayView;
-import de.mossgrabers.controller.akai.apc.view.RaindropsView;
-import de.mossgrabers.controller.akai.apc.view.SequencerView;
 import de.mossgrabers.controller.akai.apc.view.SessionView;
 import de.mossgrabers.controller.akai.apc.view.ShiftView;
+import de.mossgrabers.bitwig.framework.daw.UserControlsFactory;
 import de.mossgrabers.framework.command.continuous.KnobRowModeCommand;
+import de.mossgrabers.framework.command.core.NopCommand;
 import de.mossgrabers.framework.command.core.TriggerCommand;
 import de.mossgrabers.framework.command.trigger.Direction;
 import de.mossgrabers.framework.command.trigger.FootswitchCommand;
@@ -59,7 +57,6 @@ import de.mossgrabers.framework.command.trigger.transport.MetronomeCommand;
 import de.mossgrabers.framework.command.trigger.transport.PlayCommand;
 import de.mossgrabers.framework.command.trigger.transport.StopCommand;
 import de.mossgrabers.framework.command.trigger.view.FeatureGroupButtonColorSupplier;
-import de.mossgrabers.framework.command.trigger.view.ToggleShiftViewCommand;
 import de.mossgrabers.framework.command.trigger.view.ViewButtonCommand;
 import de.mossgrabers.framework.configuration.ISettingsUI;
 import de.mossgrabers.framework.controller.AbstractControllerSetup;
@@ -100,6 +97,10 @@ import de.mossgrabers.framework.view.Views;
 public class APCControllerSetup extends AbstractControllerSetup<APCControlSurface, APCConfiguration>
 {
     private final boolean      isMkII;
+    // [fork] Fixed, user mappable device knobs or following the cursor device
+    private IParameter []      fixedDeviceKnobs;
+    private ParameterMode<APCControlSurface, APCConfiguration> deviceKnobMode;
+    private Boolean            deviceKnobsFixed;
     private APCTapTempoCommand tapTempoCommand;
 
 
@@ -198,11 +199,8 @@ public class APCControllerSetup extends AbstractControllerSetup<APCControlSurfac
     {
         final APCControlSurface surface = this.getSurface ();
         final ViewManager viewManager = surface.getViewManager ();
-        viewManager.register (Views.PLAY, new PlayView (surface, this.model));
+        // [fork] Session only: the Play, Sequencer, Drum and Raindrops views are not registered
         viewManager.register (Views.SESSION, new SessionView (surface, this.model));
-        viewManager.register (Views.SEQUENCER, new SequencerView (surface, this.model));
-        viewManager.register (Views.DRUM, new DrumView (surface, this.model));
-        viewManager.register (Views.RAINDROPS, new RaindropsView (surface, this.model));
         viewManager.register (Views.SHIFT, new ShiftView (surface, this.model));
         viewManager.register (Views.TEMPO, new TempoView<> (surface, this.model, this.isMkII ? APCColorManager.APC_MKII_COLOR_BLUE : APCColorManager.APC_COLOR_GREEN, this.isMkII ? APCColorManager.APC_MKII_COLOR_WHITE : APCColorManager.APC_COLOR_YELLOW, APCColorManager.APC_COLOR_BLACK));
     }
@@ -217,7 +215,9 @@ public class APCControllerSetup extends AbstractControllerSetup<APCControlSurfac
         final ModeManager modeManager = surface.getModeManager ();
         final ITransport t = this.model.getTransport ();
 
-        this.addButton (ButtonID.SHIFT, "SHIFT", new ToggleShiftViewCommand<> (this.model, surface), APCControlSurface.APC_BUTTON_SHIFT);
+        // [fork] Shift is a plain modifier (hold it for the native APC Shift functions), it never
+        // opens the Shift view with the view selection
+        this.addButton (ButtonID.SHIFT, "SHIFT", NopCommand.INSTANCE, APCControlSurface.APC_BUTTON_SHIFT);
         this.addButton (ButtonID.PLAY, "PLAY", new PlayCommand<> (this.model, surface), APCControlSurface.APC_BUTTON_PLAY, t::isPlaying, ColorManager.BUTTON_STATE_OFF, ColorManager.BUTTON_STATE_ON);
         this.addButton (ButtonID.RECORD, "RECORD", new APCRecordCommand (this.model, surface), APCControlSurface.APC_BUTTON_RECORD, t::isRecording, ColorManager.BUTTON_STATE_OFF, ColorManager.BUTTON_STATE_ON);
         this.tapTempoCommand = new APCTapTempoCommand (this.model, surface);
@@ -340,7 +340,13 @@ public class APCControllerSetup extends AbstractControllerSetup<APCControlSurfac
         }
 
         new TrackVolumeMode<> (surface, this.model, true, ContinuousID.createSequentialList (ContinuousID.FADER1, 8)).onActivate ();
-        new ParameterMode<> (surface, this.model, true, ContinuousID.createSequentialList (ContinuousID.DEVICE_KNOB1, 8)).onActivate ();
+        // [fork] The device knobs are either fixed user controls (Bitwig: right click a parameter >
+        // Learn Controller Assignment) or follow the remote controls of the cursor device, see
+        // setting 'Device knobs'
+        this.fixedDeviceKnobs = UserControlsFactory.create (this.host, this.valueChanger, 8, "APC Device Knob ");
+        this.deviceKnobMode = new ParameterMode<> (surface, this.model, true, ContinuousID.createSequentialList (ContinuousID.DEVICE_KNOB1, 8));
+        this.updateDeviceKnobs ();
+        this.configuration.addSettingObserver (APCConfiguration.DEVICE_KNOBS_FIXED, this::updateDeviceKnobs);
 
         if (this.isMkII)
             this.addRelativeKnob (ContinuousID.TEMPO, "Tempo", new APCTempoCommand (this.model, surface, timeout), APCControlSurface.APC_KNOB_TEMPO);
@@ -674,7 +680,8 @@ public class APCControllerSetup extends AbstractControllerSetup<APCControlSurfac
     {
         final APCControlSurface surface = this.getSurface ();
         surface.getModeManager ().setActive (Modes.PAN);
-        surface.getViewManager ().setActive (this.configuration.shouldStartWithSessionView () ? Views.SESSION : this.configuration.getStartupView ());
+        // [fork] Session only
+        surface.getViewManager ().setActive (Views.SESSION);
     }
 
 
@@ -697,6 +704,32 @@ public class APCControllerSetup extends AbstractControllerSetup<APCControlSurfac
     }
 
 
+    /**
+     * [fork] Bind the device knobs according to the 'Device knobs' setting.
+     */
+    private void updateDeviceKnobs ()
+    {
+        if (this.fixedDeviceKnobs == null || this.deviceKnobMode == null)
+            return;
+        final boolean fixed = this.configuration.areDeviceKnobsFixed ();
+        if (this.deviceKnobsFixed != null && this.deviceKnobsFixed.booleanValue () == fixed)
+            return;
+        final boolean wasFollowing = Boolean.FALSE.equals (this.deviceKnobsFixed);
+        this.deviceKnobsFixed = Boolean.valueOf (fixed);
+
+        if (fixed)
+        {
+            if (wasFollowing)
+                this.deviceKnobMode.onDeactivate ();
+            final APCControlSurface surface = this.getSurface ();
+            for (int i = 0; i < 8; i++)
+                surface.getContinuous (ContinuousID.get (ContinuousID.DEVICE_KNOB1, i)).bind (this.fixedDeviceKnobs[i]);
+        }
+        else
+            this.deviceKnobMode.onActivate ();
+    }
+
+
     private static boolean getSoloButtonState (final boolean isShift, final ITrack track)
     {
         return isShift ? track.isAutoMonitor () : track.isSolo ();
@@ -713,6 +746,17 @@ public class APCControllerSetup extends AbstractControllerSetup<APCControlSurfac
         final IView view = surface.getViewManager ().getActive ();
         if (view == null)
             return;
+
+        // [fork] LED rings show the values of the fixed device knobs or the cursor device
+        if (Boolean.TRUE.equals (this.deviceKnobsFixed))
+        {
+            for (int i = 0; i < 8; i++)
+            {
+                surface.setLED (APCControlSurface.APC_KNOB_DEVICE_KNOB_LED_1 + i, APCControlSurface.LED_MODE_SINGLE);
+                surface.setLED (APCControlSurface.APC_KNOB_DEVICE_KNOB_1 + i, this.fixedDeviceKnobs[i].getValue ());
+            }
+            return;
+        }
 
         final IParameterBank parameterBank = this.model.getCursorDevice ().getParameterBank ();
         for (int i = 0; i < 8; i++)
