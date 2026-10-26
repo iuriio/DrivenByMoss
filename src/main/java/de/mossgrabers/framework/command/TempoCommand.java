@@ -106,10 +106,8 @@ public class TempoCommand<S extends IControlSurface<C>, C extends Configuration>
 
         if (this.isAbsolute)
         {
-            double tempo = this.minTempo + valueChanger.toNormalizedValue (value) * this.tempoRange;
-            if (!this.surface.isShiftPressed ())
-                tempo = Math.round (tempo);
-            this.transport.setTempo (tempo);
+            final double tempo = this.minTempo + valueChanger.toNormalizedValue (value) * this.tempoRange;
+            this.transport.setTempo (this.surface.isShiftPressed () ? tempo : Math.round (tempo));
             return;
         }
 
