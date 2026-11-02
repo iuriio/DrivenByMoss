@@ -83,6 +83,7 @@ public class APCConfiguration extends AbstractConfiguration
         // Transport
 
         this.activateBehaviourOnPauseSetting (globalSettings);
+        this.activateDoubleClickPlayButton (globalSettings);
 
         // ----------------------------------------------------------------
         // Workflow
