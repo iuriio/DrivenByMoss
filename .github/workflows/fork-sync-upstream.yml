@@ -26,6 +26,8 @@ jobs:
       - name: Merge upstream
         env:
           GH_TOKEN: ${{ github.token }}
+          # Without this, gh picks the 'upstream' remote added below and talks to git-moss/DrivenByMoss
+          GH_REPO: ${{ github.repository }}
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
